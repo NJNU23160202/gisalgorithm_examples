@@ -1,0 +1,151 @@
+<DOCTYPRE html>  
+    <html>  
+        <head>  
+            <title>  
+                jumping horse  
+            </title>  
+            </head>  
+            <body>     
+                
+                <form action="test" method="get">  
+                        jumping horse 
+                        <br><br><br>  
+                        <hr>  
+                        棋盘行列数:  
+                        <br>  
+                        棋盘行数:<input type="number" name="row" id="row"  min="0" max="10" />  
+                        棋盘列数:<input type="number" name="column" id="column"  min="0" max="10"/>  
+                        <hr>  
+                        开始起跳位置:  
+                        <br>  
+                        起跳点所在行:<input type="number" name="fromRow" id="fromRow"  min="0" max="10" />  
+                        起跳点所在列:<input type="number" name="fromColumn" id="fromColumn"  min="0" max="10"/>  
+                        <br>  
+                        <input type="submit" value="确定" onclick="main()"/>  
+                    </form>  
+  
+  
+                <script>  
+                    var direction=8;   
+                    var MAX_STEP=50;  
+                    var num=0;  
+                    var path=new Array(MAX_STEP + 1);   
+  
+                      
+                    for(var i=0;i<(MAX_STEP+1);i++){  
+                        path[i]=new Array(2);  
+                    }
+                    var dx=new Array( 0, 1, 2, 2, 1, -1, -2, -2, -1);
+                    var dy=new Array( 0, 2, 1, -1, -2, 2, 1, -1, -2);
+                     
+                      
+                    function Path(MAX_X, MAX_Y, step,xy){  
+                        for (var i = 0; i < MAX_Y;i++)  
+                        for (var j = 0; j < MAX_X; j++)  
+                            xy[i][j] = 0;  
+                        for (var i = 1; i < step; i++){  
+                            xy[path[i][1]][path[i][0]] = 1;  
+                        }  
+                    }  
+  
+  
+                    function Judgment(x, y, xy){  
+                        var judge = false;  
+  
+                        if (xy[y][x]!=0)
+                            judge = true;     
+                        else  
+                            xy[y][x] = 1;  
+                        return judge;
+                    }  
+  
+  
+                    function Jump( MAX_X, MAX_Y,x,y,step,xy){  
+                        var t1, t2, t3, t4;  
+                        var x1, y1;  
+  
+                        Path(MAX_X, MAX_Y,step,xy);  
+                        for (var k = 1; k <= direction; k++){  
+                             
+                            x1 = x + dx[k];  
+                            y1 = y + dy[k];  
+  
+                           
+                            if (x1 > MAX_X || y1 > MAX_Y || x1 < 0 || y1 < 0)  
+                                continue;  
+  
+                            t1 = (x1 >= 0) && (x1 <= MAX_X);
+                            t2 = (y1 >= 0) && (y1 <= MAX_Y);
+                             
+                             
+                            t3 = (x1 == path[0][0]);  
+                            t4 = (y1 == path[0][1]);  
+  
+                            if (t1 && t2)
+                            {
+                                
+                                
+                                if (!Judgment(x1, y1,xy))
+                                {
+                                    path[step][0] = x1;  
+                                    path[step][1] = y1;  
+  
+                                    
+                                    if (t3 && t4){  
+                                        num++;  
+                                        document.write("方案"+num+":");  
+  
+                                        for (var i = 0; i <= step; i++){  
+                                            document.write( "("+path[i][0]+","+path[i][1]+")");  
+                                            if (i != step)  
+                                                document.write(" -> ");  
+                                        }                                    
+                                        document.write("<br>");  
+                                    }
+                                    else{  
+                                        Jump(MAX_X, MAX_Y,x1, y1, step + 1,xy);   
+                                    }
+                                }
+                            }
+                        }
+                    }  
+  
+  
+                    function main(){           
+                        var MAX_X;      
+                        var MAX_Y;      
+                        var a,b;  
+                        
+                         
+                        MAX_X=document.getElementById("column").value;  
+                        MAX_Y=document.getElementById("row").value;  
+                        a=path[0][0]=document.getElementById("fromColumn").value;            
+                        b=path[0][1]=document.getElementById("fromRow").value;  
+                         
+                          
+  
+                        if(MAX_X>10 || MAX_Y>10 || a>10 ||b>10 || (a+1)>MAX_X || (b+1)>MAX_Y){  
+                          document.write("错误,请重新输入");  
+                        }  
+                        var xy=new Array(MAX_Y+1);  
+                        for(var i=0;i<MAX_Y+1;i++){  
+                            xy[i]=new Array(MAX_X+1);  
+                        }  
+                        for(var i=0;i<MAX_Y+1;i++){  
+                            for(var j=0;j<MAX_X+1;j++){  
+                                xy[i][j]=0;  
+                            }  
+                        }  
+                   
+                        Jump(MAX_X, MAX_Y,0, 0, 1,xy);  
+                        document.write("总方案数"+ num);      
+                        if(num==0)
+                        {  
+                            document.write("num");  
+                        }  
+                    }  
+  
+                </script>  
+            </body>  
+    </html>  
+</DOCTYPRE>  
