@@ -1,0 +1,103 @@
+
+
+<html>
+        <head>
+                <title>myname</title>
+        </head>
+        <body>
+            <input id="fileInput"type="file"onchange="processFiles()"/>
+            <br>
+            <canvas id="myCanvas"width="400"height="400"style="border:1px soild #c3c3c3"></canvas>
+            <script type="text/Javascript">
+                function drawRect(i,j,wg_w,wg_h){
+                    var drawing=document.getElementById("myCanvas");
+                    if(!myCanvas.getContext) return false;
+                    var context=drawing.getContext ("2d");
+                    context.lineWidth =2;
+                    context.strokeRect(i*25,j*25,wg_w,wg_h)
+                }
+                var c_w=400;
+                var c_h=400;
+                var wg_w=25;
+                var wg_h=25;
+                drawGrid(c_w,c_h,wg_w,wg_h);
+                function drawGrid(c_w,c_h,wg_w,wg_h){
+                    var rows=c_w/wg_w;
+                    var cols=c_h/wg_h;
+                    for(var i=0;i<rows;i++){
+                        for(var j=0;j<cols;j++){
+                            drawRect(i,j,wg_w,wg_h);
+                        }
+                    }
+                }
+
+
+                var wordnum = 0;       
+                var wordArray = new Array();   
+                function processFiles(){
+                    var file=document.getElementById("fileInput").files[0];
+                    var reader =new FileReader();
+                    reader.readAsText(file);
+                    reader.onload=function(e){
+                    wordArray[wordnum++] = nameStrnameXY(this.result);     
+                    //document.write(wordArray[0]);
+                    drawname(wordnum);
+                    }
+                }
+                function nameStrnameXY(nameStr){
+                    var line_num = 0;        
+                    var point_num = 0;       
+                    var nameXY = new Array();  
+                    var strs = nameStr.split("\n");    
+                    for (var i = 0; i < strs.length ;i++)
+                    {
+                        if( i == 0){   
+                            nameXY[line_num] = new Array();
+                            i++;
+                        }
+                        if(strs[i].indexOf("END") >= 0)
+                        {
+                            if(strs[i+1].indexOf("END") >= 0)    
+                            return nameXY;
+                            else                               
+                            {
+                            nameXY[++line_num] = new Array();
+                            i += 2;
+                            point_num = 0;
+                            }
+                        }
+                    
+                    var XY = strs[i].split(',');
+                    nameXY[line_num][point_num] = new Array(2);       
+                    nameXY[line_num][point_num][0] = parseFloat(XY[0]);
+                    nameXY[line_num][point_num++][1] = parseFloat(XY[1]);
+                    }
+                }
+                function drawname(wordnum)
+                {
+                    var drawFigure = myCanvas.getContext("2d");
+                    drawFigure.lineWidth = 8;                          
+                    drawFigure.strokeStyle = "#6A5ACD";                    
+                    for (var wNum = 0; wNum < wordnum; wNum++)          
+                    {
+                        var sWidth = wNum * c_w;            
+                        var lines = wordArray[wNum];            
+                        for (var dLineNum = lines.length - 1; dLineNum >= 0; dLineNum--)
+                        {
+                            var line = lines[dLineNum];         
+                            drawFigure.beginPath();             
+                            drawFigure.moveTo(sWidth + line[0][0]*wg_w,(16-line[0][1])*wg_w);
+                            for (var dPointNum = 1 ; dPointNum < line.length; dPointNum++)
+                            {
+                            drawFigure.lineTo(sWidth + line[dPointNum][0]*wg_w,(16 - line[dPointNum][1])*wg_w);
+                            }
+                        drawFigure.stroke();                                
+                        }
+                    }
+                }
+         
+                 
+                
+            </script>
+        </body>
+</html>
