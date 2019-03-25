@@ -1,0 +1,386 @@
+<html>    
+    <head>    
+        <title>空间空间对象几何特征</title>    
+    </head>    
+    <body>               
+        <input id="myNameFile" type="file" onchange="readNameFile()"/>  <br>  
+              
+        <script type="text/Javascript">   
+            var interval = 20;      
+            var myCanvas = document.createElement("canvas");       
+            myCanvas.id = "can";
+            document.body.appendChild(myCanvas);
+            var origin = 50;        
+            var wordArray = new Array();    
+            var wordNum = 0;                
+            var changeNum = 0;              
+            var changeList = new Array(7);  
+            changeList[0] = new Array(1, 1, 0, 0, 0);       //左斜
+            changeList[1] = new Array(2, 0, -0.15, 0, 0)    //耸肩
+            changeList[2] = new Array(3, 1.2, 1.2, 0, 0);   //放大
+            changeList[3] = new Array(3, 0.5, 0.5, 0, 0);   //缩小
+            changeList[4] = new Array(4, Math.cos(Math.PI/9), Math.sin(Math.PI/9), 0, 0); //旋转
+            changeList[5] = new Array(5, 0, 1, 1, 0);        //对称变换
+            changeList[6] = new Array(6, 200, 20, 0, 0);     //平移 
+            
+            function readNameFile()
+            {  
+                var nameFile = document.getElementById("myNameFile").files[0];  
+                var reader=new FileReader();  
+                reader.readAsText(nameFile);  
+                reader.onload = function(e)  
+                {  
+                    wordArray[wordNum++] = nameStr2nameXY(this.result);      
+                    drawName(0);
+                    setTimeout('loadInTime()',5000); 
+                }     
+            }
+                       function nameStr2nameXY(nameStr)
+            {
+                var lineNum = 0;        
+                var pointNum = 0;       
+                var nameXY = new Array();  
+                var strs = nameStr.split("\n");     
+                for (var i = 0; i < strs.length ;i++)
+                {
+                    if( i == 0)   
+                    {
+                        nameXY[lineNum] = new Array();
+                        i++;
+                    }
+                    if(strs[i].indexOf("END") >= 0)
+                    {
+                        if(strs[i+1].indexOf("END") >= 0)    
+                            return nameXY;
+                        else                                
+                        {
+                            nameXY[++lineNum] = new Array();
+                            i += 2;
+                            pointNum = 0;
+                        }
+                    }
+                    
+                    var XY = strs[i].split(',');
+                    nameXY[lineNum][pointNum] = new Array(2);       
+                    nameXY[lineNum][pointNum][0] = parseFloat(XY[0]);
+                    nameXY[lineNum][pointNum++][1] = parseFloat(XY[1]);
+                }
+            }
+            function loadInTime()
+            {
+                signChange = changeList[changeNum++];
+                drawName(signChange[0], signChange[1], signChange[2], signChange[3], signChange[4]);
+                if (changeNum == 7) return;
+                setTimeout('loadInTime()',5000);
+            }
+            
+            function drawName(drawstlye, signX, signY, signX1 = 0, signY1 = 0)
+            {
+                createGrid(drawstlye, signX, signY, signX1, signY1);        
+                var drawFigure = myCanvas.getContext("2d");
+                drawFigure.lineWidth = 10;                          
+                drawFigure.strokeStyle = "blue";                    
+                switch(drawstlye)
+                {
+                case 0:
+                    for (var wNum = 0; wNum < wordNum; wNum++)          
+                    {
+                        var sWidth = 200;
+                        var lines = wordArray[wNum];            
+                        for (var dLineNum = lines.length - 1; dLineNum >= 0; dLineNum--)
+                        {
+                            var line = lines[dLineNum];         
+                            drawFigure.beginPath();             
+                            drawFigure.moveTo(origin + line[0][0]*interval, origin + (16-line[0][1])*interval);
+                            for (var dPointNum = 1 ; dPointNum < line.length; dPointNum++)
+                                drawFigure.lineTo(origin + line[dPointNum][0]*interval, origin + (16 - line[dPointNum][1])*interval);
+                            drawFigure.stroke();                          
+                        }
+                    }break;
+                case 1:case 2://左斜、耸肩
+                    for (var wNum = 0; wNum < wordNum; wNum++)          
+                    {
+                        var lines = wordArray[wNum];            
+                        for (var dLineNum = lines.length - 1; dLineNum >= 0; dLineNum--)
+                        {
+                            var line = lines[dLineNum];         
+                            drawFigure.beginPath();            
+                            var myPoint = new Array(2);
+                            myPoint[0] = obliqueX(origin + line[0][0]*interval, origin + (16-line[0][1])*interval,signX);
+                            myPoint[1] = obliqueY(origin + line[0][0]*interval, origin + (16-line[0][1])*interval,signY);
+                            drawFigure.moveTo(myPoint[0], myPoint[1]);
+                            for (var dPointNum = 1 ; dPointNum < line.length; dPointNum++)
+                            {
+                                myPoint[0] = obliqueX(origin + line[dPointNum][0]*interval, origin + (16-line[dPointNum][1])*interval,signX);
+                                myPoint[1] = obliqueY(origin + line[dPointNum][0]*interval, origin + (16-line[dPointNum][1])*interval,signY);
+                                drawFigure.lineTo(myPoint[0], myPoint[1]);
+                            }
+                            drawFigure.stroke();                               
+                        }
+                    }
+                    break;
+                case 3://放大、缩小
+                    for (var wNum = 0; wNum < wordNum; wNum++)         
+                    {
+                        var lines = wordArray[wNum];            
+                        for (var dLineNum = lines.length - 1; dLineNum >= 0; dLineNum--)
+                        {
+                            var line = lines[dLineNum];         
+                            drawFigure.beginPath();            
+                            drawFigure.moveTo(scaleX(origin + line[0][0]*interval,signX), scaleY(origin + (16-line[0][1])*interval,signY));
+                            for (var dPointNum = 1 ; dPointNum < line.length; dPointNum++)
+                                drawFigure.lineTo(scaleX(origin + line[dPointNum][0]*interval,signX), scaleY(origin + (16 - line[dPointNum][1])*interval,signY));
+                            drawFigure.stroke();               
+                        }
+                    }
+                    break;
+                case 4://旋转
+                    for (var wNum = 0; wNum < wordNum; wNum++)         
+                    {
+                        var lines = wordArray[wNum];
+                        for (var dLineNum = lines.length - 1; dLineNum >= 0; dLineNum--)
+                        {
+                            var line = lines[dLineNum];        
+                            drawFigure.beginPath();            
+                            var myPoint = new Array(2);
+                            myPoint[0] = spinX(origin + line[0][0]*interval, 50 + (16-line[0][1])*interval,signX,signY);
+                            myPoint[1] = spinY(origin + line[0][0]*interval, 50 + (16-line[0][1])*interval,signX,signY);
+                            drawFigure.moveTo(myPoint[0], myPoint[1]);
+                            for (var dPointNum = 1 ; dPointNum < line.length; dPointNum++)
+                            {
+                                myPoint[0] = spinX(origin + line[dPointNum][0]*interval, 50 + (16-line[dPointNum][1])*interval,signX,signY);
+                                myPoint[1] = spinY(origin + line[dPointNum][0]*interval, 50 + (16-line[dPointNum][1])*interval,signX,signY);
+                                drawFigure.lineTo(myPoint[0], myPoint[1]);
+                            }
+                            drawFigure.stroke();                              
+                        }
+                    }
+                    origin = 50;
+                    break;
+                case 5://对称变换
+                    for (var wNum = 0; wNum < wordNum; wNum++)         
+                    {
+                        var lines = wordArray[wNum];          
+                        for (var dLineNum = lines.length - 1; dLineNum >= 0; dLineNum--)
+                        {
+                            var line = lines[dLineNum];        
+                            drawFigure.beginPath();           
+                            var myPoint = new Array(2);
+                            myPoint[0] = symmrtry(origin + line[0][0]*interval, origin + (16-line[0][1])*interval,signX,signY);
+                            myPoint[1] = symmrtry(origin + line[0][0]*interval, origin + (16-line[0][1])*interval,signX1,signY1);
+                            drawFigure.moveTo(myPoint[0], myPoint[1]);
+                            for (var dPointNum = 1 ; dPointNum < line.length; dPointNum++)
+                            {
+                                myPoint[0] = symmrtry(origin + line[dPointNum][0]*interval, origin + (16-line[dPointNum][1])*interval,signX,signY);
+                                myPoint[1] = symmrtry(origin + line[dPointNum][0]*interval, origin + (16-line[dPointNum][1])*interval,signX1,signY1);
+                                drawFigure.lineTo(myPoint[0], myPoint[1]);
+                            }
+                            drawFigure.stroke();                               
+                        }
+                    }
+                    break;
+                case 6://平移
+                    for (var wNum = 0; wNum < wordNum; wNum++)         
+                    {
+                        var lines = wordArray[wNum];            
+                        for (var dLineNum = lines.length - 1; dLineNum >= 0; dLineNum--)
+                        {
+                            var line = lines[dLineNum];         
+                            drawFigure.beginPath();            
+                            drawFigure.moveTo(translateX(origin + line[0][0]*interval,signX),translateY(origin + (16-line[0][1])*interval,signY));
+                            for (var dPointNum = 1 ; dPointNum < line.length; dPointNum++)
+                                drawFigure.lineTo(translateX(origin + line[dPointNum][0]*interval,signX),translateY(origin + (16 - line[dPointNum][1])*interval,signY));
+                            drawFigure.stroke();                               
+                        }
+                    }
+                    break;
+                }
+            }
+            
+            function createGrid(drawstlye, signX, signY, signX1, signY1)
+            {
+                
+                myCanvas.width = 1000;
+                myCanvas.height = 1000;
+                var drawFigure = myCanvas.getContext("2d");
+                drawFigure.lineWidth = 1;                       
+                drawFigure.strokeStyle = "gray";                
+                if(drawstlye == 4)  origin = 200;               
+                lineArrayRow = new Array(17);
+                for(var i = 0; i <= 16; i++){
+                    lineArrayRow[i] = new Array(2)
+                    for(var j = 0; j < 2; j++){
+                        lineArrayRow[i][j] = new Array(2);
+                        lineArrayRow[i][j][0] = origin + interval*i;
+                        lineArrayRow[i][j][1] = origin + 16*interval*j;
+                    }
+                }
+                lineArrayColumn = new Array(17);
+                for(var i = 0; i <= 16; i++){
+                    lineArrayColumn[i] = new Array(2)
+                    for(var j = 0; j < 2; j++){
+                        lineArrayColumn[i][j] = new Array(2);
+                        lineArrayColumn[i][j][0] = origin + 16*interval*j;
+                        lineArrayColumn[i][j][1] =  origin + interval*i;
+                    }
+                }
+                switch(drawstlye)
+                {
+                case 0:
+                    for (var i = 0; i <= 16; i++)
+                    {
+                        drawFigure.moveTo(lineArrayRow[i][0][0], lineArrayRow[i][0][1]);
+                        drawFigure.lineTo(lineArrayRow[i][1][0], lineArrayRow[i][1][1]);
+                        drawFigure.stroke();                                
+                    }
+                    for ( var i = 0 ; i <= 16 ; i++)
+                    {
+                        drawFigure.moveTo(lineArrayColumn[i][0][0], lineArrayColumn[i][0][1]);
+                        drawFigure.lineTo(lineArrayColumn[i][1][0], lineArrayColumn[i][1][1]);
+                        drawFigure.stroke();                                
+                    }
+                    break;
+                case 1:case 2:
+                    for (var i = 0; i <= 16; i++)
+                    {
+                        var myPoint = new Array(2);
+                        myPoint[0] = obliqueX(lineArrayRow[i][0][0],lineArrayRow[i][0][1],signX);
+                        myPoint[1] = obliqueY(lineArrayRow[i][0][0],lineArrayRow[i][0][1],signY);
+                        drawFigure.moveTo(myPoint[0], myPoint[1]);
+                        myPoint[0] = obliqueX(lineArrayRow[i][1][0],lineArrayRow[i][1][1],signX);
+                        myPoint[1] = obliqueY(lineArrayRow[i][1][0],lineArrayRow[i][1][1],signY);
+                        drawFigure.lineTo(myPoint[0], myPoint[1]);
+                        drawFigure.stroke();                                
+                    }
+                    for ( var i = 0 ; i <= 16 ; i++)
+                    {
+                        var myPoint = new Array(2);
+                        myPoint[0] = obliqueX(lineArrayColumn[i][0][0],lineArrayColumn[i][0][1],signX);
+                        myPoint[1] = obliqueY(lineArrayColumn[i][0][0],lineArrayColumn[i][0][1],signY);
+                        drawFigure.moveTo(myPoint[0], myPoint[1]);
+                        
+                        myPoint[0] = obliqueX(lineArrayColumn[i][1][0],lineArrayColumn[i][1][1],signX);
+                        myPoint[1] = obliqueY(lineArrayColumn[i][1][0],lineArrayColumn[i][1][1],signY);
+                        drawFigure.lineTo(myPoint[0], myPoint[1]);
+                        drawFigure.stroke();                                
+                    }
+                    break;
+                case 3:
+                    for (var i = 0; i <= 16; i++)
+                    {
+                        drawFigure.moveTo(scaleX(lineArrayRow[i][0][0],signX), scaleY(lineArrayRow[i][0][1],signY));
+                        drawFigure.lineTo(scaleX(lineArrayRow[i][1][0],signX), scaleY(lineArrayRow[i][1][1],signY));
+                        drawFigure.stroke();                                
+                    }
+                    for ( var i = 0 ; i <= 16 ; i++)
+                    {
+                        drawFigure.moveTo(scaleX(lineArrayColumn[i][0][0],signX), scaleY(lineArrayColumn[i][0][1],signY));
+                        drawFigure.lineTo(scaleX(lineArrayColumn[i][1][0],signX), scaleY(lineArrayColumn[i][1][1],signY));
+                        drawFigure.stroke();                                
+                    }
+                    break;
+                case 4:
+                    for (var i = 0; i <= 16; i++)
+                    {
+                        var myPoint = new Array(2);
+                        myPoint[0] = spinX(lineArrayRow[i][0][0],lineArrayRow[i][0][1] - 150,signX,signY);
+                        myPoint[1] = spinY(lineArrayRow[i][0][0],lineArrayRow[i][0][1] - 150,signX,signY);
+                        drawFigure.moveTo(myPoint[0], myPoint[1]);
+                        myPoint[0] = spinX(lineArrayRow[i][1][0],lineArrayRow[i][1][1] - 150,signX,signY);
+                        myPoint[1] = spinY(lineArrayRow[i][1][0],lineArrayRow[i][1][1] - 150,signX,signY);
+                        drawFigure.lineTo(myPoint[0], myPoint[1]);
+                        drawFigure.stroke();                                
+                    }
+                    for ( var i = 0 ; i <= 16 ; i++)
+                    {
+                        var myPoint = new Array(2);
+                        myPoint[0] = spinX(lineArrayColumn[i][0][0],lineArrayColumn[i][0][1] - 150,signX,signY);
+                        myPoint[1] = spinY(lineArrayColumn[i][0][0],lineArrayColumn[i][0][1] - 150,signX,signY);
+                        drawFigure.moveTo(myPoint[0], myPoint[1]);
+                        
+                        myPoint[0] = spinX(lineArrayColumn[i][1][0],lineArrayColumn[i][1][1] - 150,signX,signY);
+                        myPoint[1] = spinY(lineArrayColumn[i][1][0],lineArrayColumn[i][1][1] - 150,signX,signY);
+                        drawFigure.lineTo(myPoint[0], myPoint[1]);
+                        drawFigure.stroke();                                
+                    }
+                    break;
+                case 5:
+                    for (var i = 0; i <= 16; i++)
+                    {
+                        var myPoint = new Array(2);
+                        myPoint[0] = symmrtry(lineArrayRow[i][0][0],lineArrayRow[i][0][1],signX,signY);
+                        myPoint[1] = symmrtry(lineArrayRow[i][0][0],lineArrayRow[i][0][1],signX1,signY1);
+                        drawFigure.moveTo(myPoint[0], myPoint[1]);
+                        myPoint[0] = symmrtry(lineArrayRow[i][1][0],lineArrayRow[i][1][1],signX,signY);
+                        myPoint[1] = symmrtry(lineArrayRow[i][1][0],lineArrayRow[i][1][1],signX1,signY1);
+                        drawFigure.lineTo(myPoint[0], myPoint[1]);
+                        drawFigure.stroke();                                
+                    }
+                    for ( var i = 0 ; i <= 16 ; i++)
+                    {
+                        var myPoint = new Array(2);
+                        myPoint[0] = symmrtry(lineArrayColumn[i][0][0],lineArrayColumn[i][0][1],signX,signY);
+                        myPoint[1] = symmrtry(lineArrayColumn[i][0][0],lineArrayColumn[i][0][1],signX1,signY1);
+                        drawFigure.moveTo(myPoint[0], myPoint[1]);
+                        
+                        myPoint[0] = symmrtry(lineArrayColumn[i][1][0],lineArrayColumn[i][1][1],signX,signY);
+                        myPoint[1] = symmrtry(lineArrayColumn[i][1][0],lineArrayColumn[i][1][1],signX1,signY1);
+                        drawFigure.lineTo(myPoint[0], myPoint[1]);
+                        drawFigure.stroke();                                
+                    }
+                    break;
+                case 6:
+                    for (var i = 0; i <= 16; i++)
+                    {
+                        drawFigure.moveTo(translateX(lineArrayRow[i][0][0],signX), translateY(lineArrayRow[i][0][1],signY));
+                        drawFigure.lineTo(translateX(lineArrayRow[i][1][0],signX), translateY(lineArrayRow[i][1][1],signY));
+                        drawFigure.stroke();                                
+                    }
+                    for ( var i = 0 ; i <= 16 ; i++)
+                    {
+                        drawFigure.moveTo(translateX(lineArrayColumn[i][0][0],signX), translateY(lineArrayColumn[i][0][1],signY));
+                        drawFigure.lineTo(translateX(lineArrayColumn[i][1][0],signX), translateY(lineArrayColumn[i][1][1],signY));
+                        drawFigure.stroke();                                
+                    }
+                    break;
+                }
+            }
+            function obliqueX(pointX, pointY, obliqueNumX)
+            {
+                return pointX + pointY*obliqueNumX;
+            }
+            function obliqueY(pointX, pointY, obliqueNumY)
+            {
+                return pointX*obliqueNumY + pointY;
+            }
+            function scaleX(pointX, scaleNumX)
+            {
+                return pointX*scaleNumX;
+            }
+            function scaleY(pointY, scaleNumY)
+            {
+                return pointY*scaleNumY;
+            }
+            function spinX(pointX, pointY, cos1, sin1)
+            {
+                return pointX*cos1 - pointY*sin1;
+            }
+            function spinY(pointX, pointY, cos1, sin1)
+            {
+                return pointX*sin1 + pointY*cos1;
+            }
+            function symmrtry(pointX, pointY, symmrtryNum1, symmrtryNum2)
+            {
+                return symmrtryNum1*pointX + symmrtryNum2*pointY;
+            }
+            function translateX(pointX, translateNumX)
+            {
+                return pointX + translateNumX;
+            }
+            function translateY(pointY, translateNumY)
+            {
+                return pointY + translateNumY;
+            }
+        </script>     
+    </body>    
+</html>  
