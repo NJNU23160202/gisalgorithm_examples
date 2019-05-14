@@ -1,0 +1,264 @@
+<html>  
+    <head>
+        <title>多边形面积计算</title>
+    </head>
+            
+    
+    <body>
+          
+                    
+        <div >
+
+            <div >
+            <p>多边形面积计算</p>
+            <input type="file" id="fileInput"> 
+            <br>
+            <br>
+            <input type="button" value="显示" onclick="JS()">
+            <input type="button" value="计算面积" onclick="Area()">
+            <input type="button" value="经纬度坐标" onclick="fanjie()">
+            <br>
+            <div id="tt">
+            </div>
+            </div>
+            <div >
+                <canvas id="canvas" width="1000px" height="600px" ></canvas>
+            </div>
+            <div style="width:35%;height:585px;float:left;"id="result1">
+            </div> 
+            <div style="width:35%;height:585px;float:left;" id="result2">
+            
+        </div>
+    
+<script type="text/javascript">
+function Point(x,y)
+{
+    this.x=x;
+    this.y=y;
+}
+var MAXAMOUNT=50000;
+var canvas=document.getElementsByName("canvas")[0];
+var A=new Array();
+var area=new Array();
+var N=0;
+var x=new Array();
+var y=new Array();
+for(var i=0;i<MAXAMOUNT;i++)
+{
+     x[i]=-1;
+     y[i]=-1;
+}
+//WGS84坐标系参数
+var a = 6378137;//长轴
+var b = 6356752.3142;//短轴
+var PI = 3.14159265;//圆周率
+//江苏省边界
+var maxJSX = 13574614.8546856;
+var maxJSX_Y = 3704087.05481275;
+var minJSX = 12952537.4951228;
+var minJSX_Y = 4101836.00894706;
+var maxJSY = 4156216.54314818;
+var maxJSY_X = 13273585.8008774;
+var minJSY = 3579743.801743;
+var minJSY_X = 13413840.1216346;
+var eps = 0.0000000000000000001;
+//读取江苏省地图点文件
+function JS(){   
+    var inputfile = document.getElementById("fileInput").files[0];
+    var reader = new FileReader();
+    reader.readAsText(inputfile);
+    reader.onload=function(e)
+    {   
+        var text=reader.result.split("\r\n");
+   
+     
+        A[N]=new Array();
+        var l=text.length;
+        var judge=0;
+        for(i=1;i<l-1;i++) 
+        {   
+            
+            if(text[i]!="END")
+            {   
+                if(text[i].length!=2  && text[i].length!=1)
+                {
+                var x;
+                var y;
+                x=text[i].split(",")[0];
+                y=text[i].split(",")[1];
+                A[N][judge]=new Point(x,y);
+                judge=judge+1;
+                }
+            }
+            else
+            {
+                judge=0;
+                N=N+1;
+                A[N]=new Array();
+            }
+        }
+        var canvas = document.getElementById("canvas");
+        var cxt = canvas.getContext("2d");      
+        cxt.beginPath();
+        cxt.lineWidth = 2;
+        for(i=0;i<N+1;i++)
+        {   
+            var l=A[i].length;
+            for(j=0;j<l-1;j++)
+            {
+                 
+                cxt.moveTo((A[i][j].x)*0.0008-10000,3400-(A[i][j].y)*0.0008);
+                cxt.lineTo((A[i][j+1].x)*0.0008-10000,3400-(A[i][j+1].y)*0.0008);
+                
+            }
+        }
+        cxt.stroke();
+        readfile();
+    }
+}
+function readfile(){
+    var file=document.getElementById("fileInput").files[0];
+    var reader=new FileReader();
+    reader.readAsText(file);
+    reader.onload = function (e) 
+    {
+        var fileText = e.target.result.split("\n");
+        for(var i=0;i<fileText.length;i++)
+        {
+            if(fileText[i].length>4) //排除END行和序号行
+            {
+                var arr=fileText[i].split(",");//以逗号分隔
+                x[i]=arr[0];
+                y[i]=arr[1];
+                            
+            }
+            else
+            {
+                x[i]=-1;
+                y[i]=-1;     
+            }
+        }
+    }
+} 
+//墨卡托反解
+function fanjie(){
+    var file=document.getElementById("fileInput").files[0];
+    var reader=new FileReader();
+    reader.readAsText(file);
+    reader.onload = function (e) 
+    {
+        var fileText = e.target.result.split("\n");
+        for(var i=0;i<fileText.length;i++)
+        {
+            if(fileText[i].length>4) //排除END行和序号行
+            {
+                var arr=fileText[i].split(",");//以逗号分隔
+                x[i]=arr[0];
+                y[i]=arr[1];
+                            
+            }
+            else
+            {
+                x[i]=-1;
+                y[i]=-1;     
+            }
+        }
+    }
+    var canvas = document.getElementById("canvas");
+    var cxt = canvas.getContext("2d");
+    cxt.clearRect(0, 0, 1000, 700);
+    var a=6378245;
+    var b=6356863.01877;
+    var e1=0.006693421622966;//第一偏心率
+    var e2=0.006738525414684;//第二偏心率
+    var e=1/298.3;
+    var B1=(30+45/60)*Math.PI/180;//基准纬线
+    var K=(a*a/b)/Math.sqrt(1+e2*e2*Math.cos(0)*Math.cos(0))*Math.cos(0);
+    var B=new Array(); //放置投影后的纬度坐标
+    var L=new Array();//放置投影后的经度坐标
+    for (var i=0;i<5000;i++)
+    {
+        if(x[i]!=-1&&(x[i+1]!=-1))
+        {
+            var Y=x[i];
+            var X=y[i];
+            var LL=(Y/K)*180/Math.PI;//换算成角度
+            L[i]=LL;
+            var B2=0;
+            var T=0;
+            while (1)
+            {
+                B2=Math.PI/2-2*Math.atan(Math.exp(-X/K)*Math.exp(e2/2*Math.log((1-e2*Math.sin(B1))/(1+e2*Math.sin(B1)))));//反解公式
+                T=Math.abs(B2-B1);
+                if(T<0.00000000001)
+                {
+                    break;
+                }
+                B1=B2;
+            }
+            B2=B2*180/Math.PI;
+            B[i]=B2;
+        }
+    }
+    var canvas = document.getElementById("canvas");
+    var cxt = canvas.getContext("2d");
+    cxt.lineWidth =2;
+    for(var i=0;i<5000-3;i++)
+    {
+        if((x[i]!=-1)&&(x[i+1]!=-1))
+        {                   
+            cxt.beginPath();
+            cxt.moveTo(L[i]*30-3000,600-(B[i]*30-600));
+            cxt.lineTo(L[i+1]*30-3000,600-(B[i+1]*30-600)); 
+            cxt.stroke();
+                       
+        }
+    }             
+}
+//求面积
+function Area()
+{
+      
+    var temp=0;
+    var count=0;
+    var area=new Array();
+    for(var i=0;i<MAXAMOUNT-1;i++)
+    {
+        if((x[i]!=-1)&&(y[i+1]!=-1))
+        {
+        //梯形的计算公式
+        var a1=parseFloat(y[i+1])+parseFloat(y[i]);
+        var b1=parseFloat(x[i+1]-x[i]);
+        temp=temp+Math.abs(a1*b1/2)/1000000; //梯形法进行面积累加
+        }
+        else
+        {
+            if(temp!=0)
+            {
+                area[count]=Math.abs(temp).toFixed(3); 
+                count++;
+            }
+            temp=0;
+        }
+    }
+      
+    if(temp!=0){
+    document.getElementById("result1").innerHTML+="面积：<br/>";
+    document.getElementById("result1").innerHTML+="第1块面积："+area[0]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第2块面积："+area[1]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第3块面积："+area[2]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第4块面积："+area[3]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第5块面积："+area[4]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第6块面积："+area[5]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第7块面积："+area[6]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第8块面积："+area[7]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第9块面积："+area[8]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第10块面积："+area[9]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第11块面积："+area[10]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第12块面积："+area[11]+"km2<br/>";
+    document.getElementById("result1").innerHTML+="第13块面积："+area[12]+"km2<br/>";   
+    }         
+}
+</script>
+</body> 
+</html>
