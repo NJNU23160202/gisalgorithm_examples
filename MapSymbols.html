@@ -1,0 +1,283 @@
+<!Doctype html>
+<html>
+
+<head>
+    <title>Symbolic</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+        #head{
+              color:black;
+              text-align:center;
+              padding:5px;
+              height: 80px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="head">
+        <h1>左转算法</h1>
+    </div>
+    <a>选择数据文件</a><input type="file" multiple="true" id="file" style="width: 200px;" />
+    <button onclick="ReadFile()">绘制</button>
+    <canvas id="canvas" style="border:1px solid #000;margin-top:20px;"></canvas>
+    
+</body>
+
+</html>
+
+<script>
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+        canvas.width = 1280;
+        canvas.height = 550;
+        var n=0;
+        function ReadFile() {
+            var files = document.getElementById('file').files;
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                var reader = new FileReader();
+                var content = null;
+                reader.readAsText(file);
+                m = n%2;
+                reader.onload = function () {
+                    content = this.result;
+                    DrawFile(content, m);
+                    n++;
+                }
+            }
+        }
+        //���
+        function mult(a, b, c) {
+            return (a[0] - c[0]) * (b[1] - c[1]) - (b[0] - c[0]) * (a[1] - c[1]);
+        }
+        //�жϵ�p�Ƿ���obj��
+        function CheckIn(obj, p) {
+            var xmax = 0, xmin = 999999999, ymax = 0, ymin = 999999999;
+            for (var i = 0; i < obj.length; i++) {
+                if (obj[i][0] < xmin) {
+                    xmin = obj[i][0];
+                }
+                if (obj[i][0] > xmax) {
+                    xmax = obj[i][0];
+                }
+                if (obj[i][1] < ymin) {
+                    ymin = obj[i][1];
+                }
+                if (obj[i][1] > ymax) {
+                    ymax = obj[i][1];
+                }
+            }
+            var p0 = [xmax + 1000, p[1]];
+            var number = 0;
+            for (var i = 0; i < obj.length - 1; i++) {
+                var p1 = obj[i];
+                var p2 = obj[i + 1];
+                if (mult(p1, p0, p) * mult(p0, p2, p) >= 0
+                    && mult(p, p2, p1) * mult(p2, p0, p1) >= 0) {
+                    number++;
+                }
+            }
+            if ((number % 2) != 0) {
+                return true;
+            }
+            return false;
+        }
+        function min(a, b) {
+            if (a < b) {
+                return a;
+            }
+            return b;
+        }
+        function max(a, b) {
+            if (a > b) {
+                return a;
+            }
+            return b;
+        }
+        function CheckCrossed(p1, p2, q1, q2) {
+            if (min(p1[0], p2[0]) <= max(q1[0], q2[0]) &&
+                min(q1[0], q2[0]) <= max(p1[0], p2[0]) &&
+                min(p1[1], p2[1]) <= max(q1[1], q2[1]) &&
+                min(q1[1], q2[1]) <= max(p1[1], p2[1])) {
+                if (((q1[0] - p1[0]) * (q1[1] - q2[1]) - (q1[1] - p1[1]) * (q1[0] - q2[0])) * ((q1[0] - p2[0]) * (q1[1] - q2[1]) - (q1[1] - p2[1]) * (q1[0] - q2[0])) < 0 &&
+                    ((p1[0] - q1[0]) * (p1[1] - p2[1]) - (p1[1] - q1[1]) * (p1[0] - p2[0])) * ((p1[0] - q2[0]) * (p1[1] - p2[1]) - (p1[1] - q2[1]) * (p1[0] - p2[0])) < 0
+                ) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        function GetCrossed(q1, q2, obj) {
+            var points = [];
+            for (var i = 0; i < obj.length - 1; i++) {
+                var p1 = obj[i];
+                var p2 = obj[i + 1];
+                if (!CheckCrossed(q1, q2, p1, p2))
+                    continue;
+                //�󽻵�
+                var tmpLeft = (q2[0] - q1[0]) * (p1[1] - p2[1]) - (p2[0] - p1[0]) * (q1[1] - q2[1]);
+                var tmpRight = (p1[1] - q1[1]) * (p2[0] - p1[0]) * (q2[0] - q1[0]) + q1[0] * (q2[1] - q1[1]) * (p2[0] - p1[0]) - p1[0] * (p2[1] - p1[1]) * (q2[0] - q1[0]);
+                var x = tmpRight / tmpLeft;
+                var tmpLeft = (p1[0] - p2[0]) * (q2[1] - q1[1]) - (p2[1] - p1[1]) * (q1[0] - q2[0]);
+                var tmpRight = p2[1] * (p1[0] - p2[0]) * (q2[1] - q1[1]) + (q2[0] - p2[0]) * (q2[1] - q1[1]) * (p1[1] - p2[1]) - q2[1] * (q1[0] - q2[0]) * (p2[1] - p1[1]);
+                var y = tmpRight / tmpLeft;
+                points.push([x, y]);
+            }
+            points.sort(function (a, b) {
+                return a[0] - b[0];
+            });
+            return points;
+        }
+        function DrawBuilding(obj) {
+            var xmax = 0, xmin = 999999999, ymax = 0, ymin = 999999999;
+            for (var i = 0; i < obj.length; i++) {
+                if (obj[i][0] < xmin) {
+                    xmin = obj[i][0];
+                }
+                if (obj[i][0] > xmax) {
+                    xmax = obj[i][0];
+                }
+                if (obj[i][1] < ymin) {
+                    ymin = obj[i][1];
+                }
+                if (obj[i][1] > ymax) {
+                    ymax = obj[i][1];
+                }
+            }
+            xmax = xmax + 10;
+            ymax = ymax + 10;
+            xmin = xmin - 10;
+            ymin = ymin - 10;
+            var ypen = ymin + xmin - xmax;
+            while (ypen <= ymax + xmax - xmin) {
+                var start = [xmin, ypen];
+                var end = [xmax, ypen + Math.sqrt(2) / 2 * (xmax - xmin)];
+                var points = GetCrossed(start, end, obj);
+                if (points.length != 0) {
+                    for (var i = 0; i < parseInt(points.length / 2); i++) {
+                        start = GetPoint(points[2 * i]);
+                        end = GetPoint(points[2 * i + 1]);
+                        ctx.strokeStyle = "black";
+                        ctx.beginPath();
+                        ctx.moveTo(start[0], start[1]);
+                        ctx.lineTo(end[0], end[1]);
+                        ctx.stroke();
+                    }
+                }
+                ypen = ypen + 3;
+            }
+        }
+        function DrawVegrgnSymbol(x, y, count) {
+            if (count % 2 == 0) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + 3, y + 1);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = "#993333";
+                ctx.stroke();
+            }
+            else {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + 3, y);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = "green";
+                ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y - 2);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = "green";
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x + 3, y);
+            ctx.lineTo(x + 3, y - 2);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = "green";
+            ctx.stroke();
+        }
+        function DrawVegrgn(obj) {
+            var xmax = 0, xmin = 999999999, ymax = 0, ymin = 999999999;
+            for (var i = 0; i < obj.length; i++) {
+                if (obj[i][0] < xmin) {
+                    xmin = obj[i][0];
+                }
+                if (obj[i][0] > xmax) {
+                    xmax = obj[i][0];
+                }
+                if (obj[i][1] < ymin) {
+                    ymin = obj[i][1];
+                }
+                if (obj[i][1] > ymax) {
+                    ymax = obj[i][1];
+                }
+            }
+            var count = 0;
+            var ypen = ymin;
+            while (ypen <= ymax) {
+                var xpen = xmin;
+                count++;
+                while (xpen <= xmax) {
+                    if (CheckIn(obj, [xpen, ypen]) && CheckIn(obj, [xpen + 1.07, ypen])) {
+                        var p = GetPoint([xpen, ypen]);
+                        DrawVegrgnSymbol(p[0], p[1], count);
+                    }
+                    xpen = xpen + 4;
+                }
+                ypen = ypen + 4;
+            }
+        }
+        function DrawFile(content, n) {
+            var data = content.split('\r\n');
+            ctx.lineWidth = 1;
+            var obj = [];
+            var count = 0;
+            for (var i = 0; i < data.length; i++) {
+                var line = data[i];
+                if (line == "END") {
+                    ctx.stroke();
+                    count = 0;
+                    if (n == 0) {
+                        DrawBuilding(obj);
+                    }
+                    else {
+                        DrawVegrgn(obj);
+                    }
+                    continue;
+                }
+                var point = line.split(',');
+                if (point.length < 2) {
+                    count = 1;
+                    obj = [];
+                    continue;
+                }
+                point[0] = parseFloat(point[0]);
+                point[1] = parseFloat(point[1]);
+                if (count == 1) {
+                    ctx.beginPath();
+                    if (n == 1) {
+                        ctx.strokeStyle = "green";
+                    }
+                    else {
+                        ctx.strokeStyle = "black";
+                    }
+                    obj.push(point);
+                    var p = GetPoint(point);
+                    ctx.moveTo(p[0], p[1]);
+                    count++;
+                }
+                else {
+                    obj.push(point);
+                    var p = GetPoint(point);
+                    ctx.lineTo(p[0], p[1]);
+                }
+            }
+        }
+        function GetPoint(point) {
+            x = (point[0] - 430000) * 2.8 + 100;
+            y = canvas.height - (point[1] - 3260000) * 2.8 + 1150;
+            return [x, y];
+        }
+    </script>
