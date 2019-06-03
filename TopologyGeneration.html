@@ -1,0 +1,587 @@
+
+<!Doctype html>
+<html>
+
+<head>
+    <title>左转算法</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+        #head{
+              color:black;
+              text-align:center;
+              padding:5px;
+              height: 80px;
+        }
+        .result {
+            margin-left: 150px;
+            border: 1px solid black;
+            height: 250px;
+            overflow: auto;
+            float: left;
+            display: block;
+            margin-top: 10px;
+            padding: 20px;
+            display: none;
+        }
+ 
+     </style> 
+</head>
+
+<body>
+    <div id="head">
+        <h1>左转算法</h1>
+    </div>
+    <a style="margin-left: 100px">选择输入文件：</a><input type="file" id="file" style="width: 200px;" />
+    <button onclick="Read()">确定</button>
+    <br>
+    <canvas id="map" style="margin-left:425px;border:1px solid #000;margin-top:10px;;"></canvas>
+  
+
+    <br>
+    <div class="result" id="r1">
+        <b>弧段</b>
+        <br>
+        <br>
+    </div>
+    <div class="result" id="r2">
+        <b>点坐标</b>
+        <br>
+        <br>
+    </div>
+    <div class="result" id="r3">
+        <b>岛的拓扑关系</b>
+        <br>
+        <br>
+    </div>
+
+    <script>
+        var canvas = document.getElementById('map');
+        var ctx = canvas.getContext('2d');
+        canvas.width =100;
+        canvas.height =50;
+
+       var canvas2 = document.getElementById('map');
+        var ctx2 = canvas2.getContext('2d');
+        canvas.width = 400;
+        canvas.height = 300;
+
+
+        var border = {};
+
+       function GetScreenPosition(point) {
+            var px = (point[0] + 20) / 2;
+            var py = canvas2.height - (point[1] + 130) / 2;
+            return [px, py];
+        }
+
+        canvas2.addEventListener('click', function (e) {
+
+            var pos = GetScreenPosition([e.layerX, e.layerY]);
+            if (PointInside(pos, border)) {
+                ClearCanvas();
+                Draw();
+                mark = 0;
+                for (var i = polygon.length - 1; i >= 0; i--) {
+                    if (PointInside(pos, polygon[i])) {
+                        for (var k = 0; k < resDao.length; k++) {
+                            if (resDao[k][0] == i) {
+                                DrawLine(i);
+                                mark++;
+                            }
+                            if (resDao[k][1] == i) {
+                                DrawLine(i);
+                                DrawLine(resDao[k][0]);
+                                mark++;
+                            }
+                        }
+                        if (mark == 0) {
+                            DrawLine(i);
+                        }
+                        break;
+                    }
+                }
+            }
+        }, false);
+
+
+        //弧段id与起点、终点、中间点、是否正向、反向访问过
+        var polylines = [];
+
+        //结点-弧段表
+        var points = [];
+
+        //多边形-弧段表
+        var polygon = [];
+
+        //多边形-点表
+        var polypoint = [];
+
+        //岛的拓扑关系表
+        var resDao = [];
+
+        function Read() {
+            var file = document.getElementById('file').files[0];
+            var reader = new FileReader();
+            reader.readAsText(file);
+            var data = null;
+            reader.onload = function (e) {
+                data = this.result;
+                polygon = [];
+                ClearCanvas();
+                DrawPolygon(data);
+                LeftTurn();
+                PolytoPoint();
+                CheckDao();
+                ShowResult();
+            }
+        }
+
+    
+     
+       function PolygonArea(data) {
+            var s = data[0][1] * (data[data.length - 1][0] - data[1][0]);
+            for (var i = 1; i < data.length; i++) {
+                s += data[i][1] * (data[i - 1][0] - data[(i + 1) % data.length][0])
+            }
+            return -s / 2;
+        }
+
+        function CheckDao() {
+
+            var again = [];
+            var area = [];
+
+            for (var i = 0; i < polypoint.length; i++) {
+                var a = PolygonArea(polypoint[i]);
+                area.push({ id: i, area: a });
+            }
+
+            area.sort(function (a, b) {
+                return a.area - b.area;
+            });
+
+            var dao = [];
+            var reduce = [];
+
+            for (var i = 0; i < area.length; i++) {
+                if (area[i].area > 0) {
+                    break;
+                }
+                else {
+                    var index = area[i].id;
+                    reduce.push(index);
+                }
+                if (i == 0) {
+                    border = { id: index, data: polygon[index] };
+                }
+            }
+
+            reduce.sort(function (a, b) {
+                return a - b;
+            });
+
+            var temp1 = [];
+            var temp2 = [];
+            var n = 0;
+            for (var i = 0; i < polypoint.length; i++) {
+                if (i == reduce[n]) {
+                    n++;
+                }
+                else {
+                    temp1.push({ id: i, data: polypoint[i] });
+                    temp2.push({ id: i, data: polygon[i] });
+                }
+            }
+
+            polypoint = temp1;
+            polygon = temp2;
+
+            for (var i = 0; i < area.length; i++) {
+                if (area[i].area > 0) {
+                    break;
+                }
+                else {
+                    for (var j = 0; j < area.length; j++) {
+                        if (Math.abs(area[j].area - Math.abs(area[i].area)) < 0.000001) {
+                            for (var k = 0; k < polygon.length; k++) {
+                                if (polygon[k].id == area[j].id) {
+                                    dao.push(polygon[k]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            resDao = [];
+            for (var i = 0; i < dao.length; i++) {
+                for (var j = 0; j < polygon.length; j++) {
+                    if (dao[i].id == polygon[j].id)
+                        continue;
+                    if (PolyInside(dao[i], polygon[j])) {
+                        for (var k = 0; k < polygon.length; k++) {
+                            if (dao[i].id == polygon[k].id) {
+                                resDao.push([k, j]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function ShowResult() {
+            document.getElementById('r1').style.display = "block";
+            for (var i = 0; i < polygon.length; i++) {
+                document.getElementById('r1').innerHTML += "面" + (i + 1) + "：";
+                for (var j = 0; j < polygon[i].data.length; j++) {
+                    document.getElementById('r1').innerHTML += polygon[i].data[j].id + " , ";
+                }
+                document.getElementById('r1').innerHTML += "<br>";
+            }
+
+            document.getElementById('r2').style.display = "block";
+            for (var i = 0; i < polypoint.length; i++) {
+                document.getElementById('r2').innerHTML += (i + 1) + "<br>";
+                for (var j = 0; j < polypoint[i].data.length; j++) {
+                    document.getElementById('r2').innerHTML += polypoint[i].data[j][0] + " , " + polypoint[i].data[j][1] + "<br>";
+                }
+                document.getElementById('r2').innerHTML += "END<br>";
+            }
+
+            document.getElementById('r3').style.display = "block";
+            for (var i = 0; i < resDao.length; i++) {
+                document.getElementById('r3').innerHTML += "面" + (resDao[i][0] + 1) + "在面" + (resDao[i][1] + 1) + "内<br>";
+            }
+        }
+
+        //判断array中是否有point，在哪个位置
+        function CheckIn(array, point) {
+            for (var i = 0; i < array.length; i++) {
+                if (array[i].point[0] == point[0] && array[i].point[1] == point[1]) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        //给结点-弧段表中的弧段按照角大小从小到大排序
+        function SortPointArc() {
+            for (var k = 0; k < points.length; k++) {
+                var arcs = (points[k].arc).slice();
+                var p = points[k].point;
+                var lines = [];
+                for (var i = 0; i < arcs.length; i++) {
+                    var now = {};
+                    var index = arcs[i];
+                    if (p[0] == polylines[index].start[0] && p[1] == polylines[index].start[1]) {
+                        now = {
+                            id: polylines[index].id, start: p,
+                            next: polylines[index].points[1], angle: 0
+                        };
+                        lines.push(now);
+                    }
+                    else if (p[0] == polylines[index].end[0] && p[1] == polylines[index].end[1]) {
+                        var n = polylines[index].points.length - 2;
+                        now = {
+                            id: polylines[index].id, start: p,
+                            next: polylines[index].points[n], angle: 0
+                        };
+                        lines.push(now);
+                    }
+                }
+
+                for (var i = 0; i < lines.length; i++) {
+                    var x1 = 1;
+                    var y1 = 0;
+                    var x2 = lines[i].next[0] - lines[i].start[0];
+                    var y2 = lines[i].next[1] - lines[i].start[1];
+                    var cos = x2 / Math.sqrt(x2 * x2 + y2 * y2);
+                    var theta = Math.acos(cos);
+                    var f = x1 * y2 - x2 * y1;
+                    if (f < 0) {
+                        theta = 2 * Math.PI - theta;
+                    }
+                    lines[i].angle = theta;
+                }
+
+                lines.sort(function (a, b) {
+                    return a.angle - b.angle;
+                });
+
+                points[k].arc = [];
+                for (var i = 0; i < lines.length; i++) {
+                    points[k].arc.push(lines[i].id);
+                }
+            }
+        }
+
+        //叉积
+        function mult(a, b, c) {
+            return (a[0] - c[0]) * (b[1] - c[1]) - (b[0] - c[0]) * (a[1] - c[1]);
+        }
+
+        //判断点P是否在poly多边形内部
+        function PointInside(p, poly) {
+            var px = [];
+            var py = [];
+            for (var i = 0; i < poly.data.length; i++) {
+                var id = poly.data[i].id;
+                for (var j = 0; j < polylines[id].points.length; j++) {
+                    px.push(polylines[id].points[j][0]);
+                    py.push(polylines[id].points[j][1]);
+                }
+            }
+            px.sort(function (a, b) {
+                return a - b;
+            });
+            py.sort(function (a, b) {
+                return a - b;
+            });
+            var ymax = py[py.length - 1];
+            var ymin = py[0];
+            var xmax = px[px.length - 1];
+            var xmin = px[0];
+            if (p[0] < xmin || p[0] > xmax || p[1] < ymin || p[1] > ymax) {
+                return false;
+            }
+
+            var p0 = [xmax + 1000, p[1]];
+            var number = 0;
+            for (var i = 0; i < poly.data.length; i++) {
+                var line = polylines[poly.data[i].id];
+                for (var j = 0; j < line.points.length - 1; j++) {
+                    var p1 = line.points[j];
+                    var p2 = line.points[j + 1];
+                    if (mult(p1, p0, p) * mult(p0, p2, p) >= 0
+                        && mult(p, p2, p1) * mult(p2, p0, p1) >= 0) {
+                        number++;
+                    }
+                }
+            }
+
+            if ((number % 2) != 0) {
+                return true;
+            }
+            return false;
+        }
+
+        //判断poly1是否在poly2内部
+        function PolyInside(poly1, poly2) {
+            var pp = [];
+            for (var i = 0; i < poly1.data.length; i++) {
+                var index = poly1.data[i].id;
+                pp.push(polylines[index].start);
+                pp.push(polylines[index].end);
+            }
+            for (var i = 0; i < pp.length; i++) {
+                if (!PointInside(pp[i], poly2))
+                    return false;
+            }
+            return true;
+        }
+
+        function Reverse(pline) {
+            var result = {
+                id: -1,
+                start: [],
+                end: [],
+                points: []
+            }
+
+            result.id = pline.id;
+            result.start = pline.end.slice();
+            result.end = pline.start.slice();
+
+            for (var i = pline.points.length - 1; i >= 0; i--) {
+                result.points.push(pline.points[i]);
+            }
+            return result;
+        }
+
+        function PolytoPoint() {
+            polypoint = [];
+
+            for (var i = 0; i < polygon.length; i++) {
+                var pps = [];
+                for (var j = 0; j < polygon[i].length; j++) {
+                    var index = polygon[i][j].id;
+                    var dir = polygon[i][j].dir;
+                    if (dir == "plus") {
+                        for (var k = 0; k < polylines[index].points.length - 1; k++) {
+                            pps.push(polylines[index].points[k]);
+                        }
+                    }
+                    else {
+                        var res = Reverse(polylines[index]);
+                        for (var k = 0; k < polylines[index].points.length - 1; k++) {
+                            pps.push(res.points[k]);
+                        }
+                    }
+                }
+                pps.push(pps[0]);
+                polypoint.push(pps);
+            }
+
+        }
+
+        function LeftTurn() {
+            SortPointArc();
+            var ids = [];
+            for (var i = 0; i < points.length; i++) {
+                ids = [];
+                var p = points[i].point; //当前多边形的起点
+                var nextpoint = [];
+                var k = 0;//取弧段集合中的第k个弧段
+                nextpoint = [];
+                var index = -1;//取该弧段
+                while (k < points[i].arc.length) {
+                    index = (points[i].arc)[k];
+                    if (p[0] == polylines[index].start[0] && p[1] == polylines[index].start[1] && polylines[index].plus == false) {
+                        //如果p为弧段的起点且该弧段的起点-终点方向没有走过
+                        polylines[index].plus = true;
+                        nextpoint = polylines[index].end;
+                        ids.push({ id: polylines[index].id, dir: "plus" });
+                        break;
+                    }
+                    else if (p[0] == polylines[index].end[0] && p[1] == polylines[index].end[1] && polylines[index].minus == false) {
+                        //如果p为弧段的终点且该弧段的终点-起点方向没有走过
+                        polylines[index].minus = true;
+                        nextpoint = polylines[index].start;
+                        ids.push({ id: polylines[index].id, dir: "minus" });
+                        break;
+                    }
+                    k++;
+                }
+                if (k == points[i].arc.length) {
+                    continue;
+                    //该点的所有相关弧段已经遍历完毕，结束循环并取下一个结点
+                }
+
+                //找到next点在结点-弧段表里面对应的index弧段的下一个弧段
+                var a = -1;//next点的编号
+                while (1) {
+                    while (nextpoint[0] != p[0] || nextpoint[1] != p[1]) {
+                        for (a = 0; a < points.length; a++) {
+                            if (points[a].point[0] == nextpoint[0] && points[a].point[1] == nextpoint[1]) {
+                                break;
+                            }
+                        }
+                        var b;
+                        var nextindex = -1;//下一个弧段的id
+                        for (b = 0; b < points[a].arc.length; b++) {
+                            if (points[a].arc[b] == index) {
+                                nextindex = (b + 1) % points[a].arc.length;
+                                break;
+                            }
+                        }
+                        index = points[a].arc[nextindex];
+                        if (nextpoint[0] == polylines[index].start[0] && nextpoint[1] == polylines[index].start[1] && polylines[index].plus == false) {
+                            //如果next为弧段的起点且该弧段的起点-终点方向没有走过
+                            polylines[index].plus = true;
+                            nextpoint = polylines[index].end;
+                            ids.push({ id: polylines[index].id, dir: "plus" });
+                        }
+                        else if (nextpoint[0] == polylines[index].end[0] && nextpoint[1] == polylines[index].end[1] && polylines[index].minus == false) {
+                            //如果p为弧段的终点且该弧段的终点-起点方向没有走过
+                            polylines[index].minus = true;
+                            nextpoint = polylines[index].start;
+                            ids.push({ id: polylines[index].id, dir: "minus" });
+                        }
+                    }
+                    polygon.push(ids);
+                    var last = ids[ids.length - 1].id;
+                    ids = [];
+                    if (polylines[last].plus == true && polylines[last].minus == true) {
+                        break;
+                    }
+                    if (p[0] == polylines[last].start[0] && p[1] == polylines[last].start[1] && polylines[last].plus == false) {
+                        polylines[last].plus = true;
+                        nextpoint = polylines[last].end;
+                        ids.push({ id: polylines[last].id, dir: "plus" });
+                    }
+                    else if (p[0] == polylines[last].end[0] && p[1] == polylines[last].end[1] && polylines[last].minus == false) {
+                        polylines[last].minus = true;
+                        nextpoint = polylines[last].start;
+                        ids.push({ id: polylines[last].id, dir: "minus" });
+                    }
+                }
+            }
+        }
+
+
+        function DrawPolygon(data) {
+            ctx.strokeStyle = "red";
+            data = data.split('\r\n');
+            var count = 0;
+            var id = -1;
+            for (var i = 0; i < data.length; i++) {
+                var line = data[i];
+
+                if (line == "END" && data[i - 1] != "END") {
+                    var last = data[i - 1];
+                    point = last.split(',');
+
+                    point[0] = parseFloat(point[0]);
+                    point[1] = parseFloat(point[1]);
+                    ll.end = point;
+                    //弧段结点表
+                    polylines.push(ll);
+                    ctx.stroke();
+                    count = 0;
+                    var index = CheckIn(points, point);
+                    if (index == -1) {
+                        //弧段
+                        var point = {
+                            id: points.length, point: point, arc: [id]
+                        }
+                        points.push(point);
+                    }
+                    else {
+                        points[index].arc.push(id);
+                    }
+                    continue;
+                }
+                var point = line.split(',');
+                if (point.length < 2) {
+                    count = 1;
+                    id = parseInt(point[0]) - 1;
+                    var ll = { id: parseInt(point[0]) - 1, start: null, end: null, points: [], plus: false, minus: false };
+                    continue;
+                }
+                else {
+                    point[0] = parseFloat(point[0]);
+                    point[1] = parseFloat(point[1]);
+                }
+                if (count == 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(point[0] * 2 - 20, (canvas.height - point[1]) * 2 - 130);
+                    ll.start = point;
+                    ll.points.push(point);
+                    var index = CheckIn(points, point);
+                    if (index == -1) {
+                        //弧段
+                        var point = {
+                            id: points.length, point: point, arc: [id]
+                        }
+                        points.push(point);
+                    }
+                    else {
+                        points[index].arc.push(id);
+                    }
+                    count++;
+                }
+                else {
+                    ctx.lineTo(point[0] * 2 - 20, (canvas.height - point[1]) * 2 - 130);
+                    ll.points.push(point);
+                }
+            }
+        }
+
+        //清空画布
+        function ClearCanvas() {
+            ctx2.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    </script>
+</body>
+
+</html>
