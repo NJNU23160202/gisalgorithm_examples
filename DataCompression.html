@@ -1,0 +1,243 @@
+
+<!Doctype html>
+<html>
+
+<head>
+    <title>矢量数据压缩</title>
+    <meta http-equiv="Content-Type" content="text/html;" />
+</head>
+
+<body>
+    <a>选择输入文件：</a><input type="file" id="file" style="width: 200px;" />
+    <select style="height:25px;margin-right: 20px" id="type1">
+        <option value="mercator">兰伯特投影</option>
+    </select>
+    <button onclick="ShowMap()" style="height:27px;width:60px;">显示</button>
+    <br>
+    <a>输入压缩等级：</a>
+    <input id="number" style="height: 21px; width: 88px;" placeholder="1800以上为佳" />
+    <button onclick="CutDown=true;ShowMap()" style="height:27px;width:90px;margin-top: 6px;">压缩并显示</button>
+    <a style="margin-left:18px">压缩率为：</a>
+    <a id="result" style="color: black">未压缩</a>
+    <canvas id="map" style="border:1px solid #000;margin-top:5px;"></canvas>
+    <script>
+        var canvas = document.getElementById('map');
+        var ctx = canvas.getContext('2d');
+        canvas.width = 1100;
+        canvas.height = 600;
+        var newdata = [];
+        var cutdowndata = [];
+        var preNumber = 0;
+        var curNumber = 0;
+        var e2 = 0.006693421622966;//克拉索夫斯基椭球体的第一偏心率
+        var e02 = 0.006738525414683;//克拉索夫斯基椭球体的第二偏心率
+        var a = 6378245;//克拉索夫斯基椭球体的长半径
+        var b = 6356863.0187730473;//克拉索夫斯基椭球体的短半径
+        var CutDown = false;
+        //清空画布
+        function ClearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        function Distance(a, b) {
+            return Math.sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]));
+        }
+        function CutDownMap(data) {
+            var city = [];
+            cutdowndata = [];
+            curNumber = 0;
+            var times = parseInt(document.getElementById('number').value);
+            for (var i = 0; i < data.length - 1; i++) {
+                var line = data[i];
+                if (line.length == 0)
+                    continue;
+                if (line == "END" && data[i - 1] == "END") {
+                    break;
+                }
+                if (line == "END") {
+                    var max = 0;
+                    var min = Distance(city[0], city[1]);
+                    var k = 0;
+                    for (var j = 0; j < city.length; j++) {
+                        var d = Distance(city[0], city[j]);
+                        if (d > max) {
+                            max = d;
+                            k = j;
+                        }
+                        if (d < min) {
+                            min = d;
+                        }
+                    }
+                    if (city[0][0] == city[city.length - 1][0] || city[0][1] == city[city.length - 1][1]) {
+                        var city1 = city.slice(0, k);
+                        var city2 = city.slice(k, city.length);
+                        DouglasPeucker(city1, times);
+                        DouglasPeucker(city2, times);
+                    }
+                    else {
+                        DouglasPeucker(city, times);
+                    }
+                    city = [];
+                    cutdowndata.push("END");
+                    continue;
+                }
+                if (line.length == 1) {
+                    cutdowndata.push(line);
+                    continue;
+                }
+                city.push(line);
+            }
+        }
+        function PointLineDistance(a, b, c) {
+            //c到a，b直线的距离
+            var A = (b[1] - a[1]) / Math.sqrt((b[1] - a[1]) * (b[1] - a[1]) + (b[0] - a[0]) * (b[0] - a[0]));
+            var B = (a[0] - b[0]) / Math.sqrt((b[1] - a[1]) * (b[1] - a[1]) + (b[0] - a[0]) * (b[0] - a[0]));
+            var C = (a[1] * b[0] - a[0] * b[1]) / Math.sqrt((b[1] - a[1]) * (b[1] - a[1]) + (b[0] - a[0]) * (b[0] - a[0]));
+            var d = Math.abs(A * c[0] + B * c[1] + C);
+            return d;
+        }
+        function DouglasPeucker(data, threshold) {
+            //如果只剩两个点，结束递归
+            if (data.length == 2) {
+                cutdowndata.push(data[0]);
+                curNumber++;
+                cutdowndata.push(data[1]);
+                curNumber++;
+                return;
+            }
+            //如果只剩一个点，加入数组
+            if (data.length == 1) {
+                cutdowndata.push(data[0]);
+                curNumber++;
+                return;
+            }
+            //如果为空，返回
+            if (data.length == 0) {
+                return;
+            }
+            var k = 0; //k是离弦最远的点下标
+            var max = 0; //max是最远的距离
+            for (var i = 1; i < data.length - 1; i++) {
+                var d = PointLineDistance(data[0], data[data.length - 1], data[i]);
+                if (d > max) {
+                    max = d;
+                    k = i;
+                }
+            }
+            if (max <= threshold) {
+                cutdowndata.push(data[0]);
+                curNumber++;
+                cutdowndata.push(data[data.length - 1]);
+                curNumber++;
+                return;
+            }
+            var data1 = data.slice(0, k);
+            var data2 = data.slice(k, data.length);
+            DouglasPeucker(data1, threshold);
+            DouglasPeucker(data2, threshold);
+        }
+        function ShowMap() {
+            var file = document.getElementById('file').files[0];
+            var reader = new FileReader();
+            reader.readAsText(file);
+            var data = null;
+            reader.onload = function (e) {
+                data = this.result;
+                ClearCanvas();
+                toLambert(data);
+                if (CutDown == true) {
+                    CutDownMap(newdata);
+                    var d = curNumber / preNumber;
+                    ShowData(cutdowndata);
+                    document.getElementById('result').innerText = d;
+                }
+                else {
+                    ShowData(newdata);
+                    document.getElementById('result').innerText = "未压缩";
+                }
+                CutDown = false;
+            }
+        }
+        function ShowData(data) {
+            var count = 0;
+            ctx.strokeStyle = "black";
+            for (var i = 0; i < data.length; i++) {
+                var line = data[i];
+                if (line == "")
+                    continue;
+                if (line == "END") {
+                    ctx.stroke();
+                    count = 0;
+                    continue;
+                }
+                if (line.length < 2) {
+                    count = 1;
+                    continue;
+                }
+                if (count == 1) {
+                    ctx.beginPath();
+                    var t = GetPoint(line[0], line[1]);
+                    ctx.moveTo(t[0], t[1]);
+                    count++;
+                }
+                else {
+                    var t = GetPoint(line[0], line[1]);
+                    ctx.lineTo(t[0], t[1]);
+                }
+            }
+        }
+        function toLambert(data) {
+            //用于存储兰伯特投影之后的数据
+            newdata = [];
+            preNumber = 0;
+            data = data.split('\r\n');
+            var count = 0;
+            for (var i = 0; i < data.length; i++) {
+                var line = data[i];
+                if (line == "END") {
+                    newdata.push("END");
+                    continue;
+                }
+                var point = line.split(',');
+                if (point.length < 2) {
+                    newdata.push(point);
+                    continue;
+                }
+                var t = GetLambertPoint(point[0], point[1]);
+                preNumber++;
+                newdata.push(t);
+            }
+            return newdata;
+        }
+        function GetLambertPoint(L, B) {
+            L = L * Math.PI / 180;
+            B = B * Math.PI / 180;
+            var b1 = 20 * Math.PI / 180; //兰伯特投影的标准纬线1
+            var b2 = 40 * Math.PI / 180; //兰伯特投影的标准纬线2
+            var l0 = 105 * Math.PI / 180;  //原点经度
+            var b0 = 0;  //原点纬度
+            var m = Math.cos(B) / Math.sqrt(1 - e2 * Math.sin(B) * Math.sin(B));
+            var mb1 = Math.cos(b1) / Math.sqrt(1 - e2 * Math.sin(b1) * Math.sin(b1));
+            var mb2 = Math.cos(b2) / Math.sqrt(1 - e2 * Math.sin(b2) * Math.sin(b2));
+            var e = Math.sqrt(e2);
+            var temp = Math.tan(Math.PI / 4 - B / 2);
+            var t = Math.tan(Math.PI / 4 - B / 2) / Math.pow(((1 - e * Math.sin(B)) / (1 + e * Math.sin(B))), e / 2);
+            var tb1 = Math.tan(Math.PI / 4 - b1 / 2) / Math.pow(((1 - e * Math.sin(b1)) / (1 + e * Math.sin(b1))), e / 2);
+            var tb2 = Math.tan(Math.PI / 4 - b2 / 2) / Math.pow(((1 - e * Math.sin(b2)) / (1 + e * Math.sin(b2))), e / 2);
+            var n = Math.log(mb1 / mb2) / Math.log(tb1 / tb2);
+            var F = mb1 / (n * Math.pow(tb1, n));
+            var r = a * F * Math.pow(t, n);
+            //计算r0，需要计算t0
+            var t0 = Math.tan(Math.PI / 4 - b0 / 2) / Math.pow((1 - e * Math.sin(b0)) / (1 + e * Math.sin(b0)), e / 2);
+            var r0 = a * F * Math.pow(t0, n);
+            var theta = n * (L - l0);
+            var X = r0 - r * Math.cos(theta);
+            var Y = r * Math.sin(theta);
+            return [Y, X];
+        }
+        function GetPoint(x, y) {
+            var x0 = (x - 5000000) / 10100 + 1100;
+            var y0 = canvas.height - (y - 1000000) / 10100 - 55;
+            return [x0, y0];
+        }
+    </script>
+</body>
