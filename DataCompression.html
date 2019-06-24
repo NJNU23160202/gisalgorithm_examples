@@ -1,24 +1,26 @@
 
+
 <!Doctype html>
 <html>
 
 <head>
-    <title>Ê¸Á¿Êı¾İÑ¹Ëõ</title>
+    <title>çŸ¢é‡æ•°æ®å‹ç¼©</title>
     <meta http-equiv="Content-Type" content="text/html;" />
 </head>
 
 <body>
-    <a>Ñ¡ÔñÊäÈëÎÄ¼ş£º</a><input type="file" id="file" style="width: 200px;" />
+    <h1>çŸ¢é‡æ•°æ®å‹ç¼©</h1>
+    <a>é€‰æ‹©è¾“å…¥æ–‡ä»¶ï¼š</a><input type="file" id="file" style="width: 200px;" />
     <select style="height:25px;margin-right: 20px" id="type1">
-        <option value="mercator">À¼²®ÌØÍ¶Ó°</option>
+        <option value="mercator">å…°ä¼¯ç‰¹æŠ•å½±</option>
     </select>
-    <button onclick="ShowMap()" style="height:27px;width:60px;">ÏÔÊ¾</button>
+    <button onclick="ShowMap()" style="height:27px;width:60px;">æ˜¾ç¤º</button>
     <br>
-    <a>ÊäÈëÑ¹ËõµÈ¼¶£º</a>
-    <input id="number" style="height: 21px; width: 88px;" placeholder="1800ÒÔÉÏÎª¼Ñ" />
-    <button onclick="CutDown=true;ShowMap()" style="height:27px;width:90px;margin-top: 6px;">Ñ¹Ëõ²¢ÏÔÊ¾</button>
-    <a style="margin-left:18px">Ñ¹ËõÂÊÎª£º</a>
-    <a id="result" style="color: black">Î´Ñ¹Ëõ</a>
+    <a>è¾“å…¥å‹ç¼©ç­‰çº§ï¼š</a>
+    <input id="number" style="height: 21px; width: 88px;" placeholder="1800ä»¥ä¸Šä¸ºä½³" />
+    <button onclick="CutDown=true;ShowMap()" style="height:27px;width:90px;margin-top: 6px;">å‹ç¼©å¹¶æ˜¾ç¤º</button>
+    <a style="margin-left:18px">å‹ç¼©ç‡ä¸ºï¼š</a>
+    <a id="result" style="color: black">æœªå‹ç¼©</a>
     <canvas id="map" style="border:1px solid #000;margin-top:5px;"></canvas>
     <script>
         var canvas = document.getElementById('map');
@@ -29,12 +31,12 @@
         var cutdowndata = [];
         var preNumber = 0;
         var curNumber = 0;
-        var e2 = 0.006693421622966;//¿ËÀ­Ë÷·òË¹»ùÍÖÇòÌåµÄµÚÒ»Æ«ĞÄÂÊ
-        var e02 = 0.006738525414683;//¿ËÀ­Ë÷·òË¹»ùÍÖÇòÌåµÄµÚ¶şÆ«ĞÄÂÊ
-        var a = 6378245;//¿ËÀ­Ë÷·òË¹»ùÍÖÇòÌåµÄ³¤°ë¾¶
-        var b = 6356863.0187730473;//¿ËÀ­Ë÷·òË¹»ùÍÖÇòÌåµÄ¶Ì°ë¾¶
+        var e2 = 0.006693421622966;//å…‹æ‹‰ç´¢å¤«æ–¯åŸºæ¤­çƒä½“çš„ç¬¬ä¸€åå¿ƒç‡
+        var e02 = 0.006738525414683;//å…‹æ‹‰ç´¢å¤«æ–¯åŸºæ¤­çƒä½“çš„ç¬¬äºŒåå¿ƒç‡
+        var a = 6378245;//å…‹æ‹‰ç´¢å¤«æ–¯åŸºæ¤­çƒä½“çš„é•¿åŠå¾„
+        var b = 6356863.0187730473;//å…‹æ‹‰ç´¢å¤«æ–¯åŸºæ¤­çƒä½“çš„çŸ­åŠå¾„
         var CutDown = false;
-        //Çå¿Õ»­²¼
+        //æ¸…ç©ºç”»å¸ƒ
         function ClearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
@@ -88,7 +90,7 @@
             }
         }
         function PointLineDistance(a, b, c) {
-            //cµ½a£¬bÖ±ÏßµÄ¾àÀë
+            //cåˆ°aï¼Œbç›´çº¿çš„è·ç¦»
             var A = (b[1] - a[1]) / Math.sqrt((b[1] - a[1]) * (b[1] - a[1]) + (b[0] - a[0]) * (b[0] - a[0]));
             var B = (a[0] - b[0]) / Math.sqrt((b[1] - a[1]) * (b[1] - a[1]) + (b[0] - a[0]) * (b[0] - a[0]));
             var C = (a[1] * b[0] - a[0] * b[1]) / Math.sqrt((b[1] - a[1]) * (b[1] - a[1]) + (b[0] - a[0]) * (b[0] - a[0]));
@@ -96,7 +98,7 @@
             return d;
         }
         function DouglasPeucker(data, threshold) {
-            //Èç¹ûÖ»Ê£Á½¸öµã£¬½áÊøµİ¹é
+            //å¦‚æœåªå‰©ä¸¤ä¸ªç‚¹ï¼Œç»“æŸé€’å½’
             if (data.length == 2) {
                 cutdowndata.push(data[0]);
                 curNumber++;
@@ -104,18 +106,18 @@
                 curNumber++;
                 return;
             }
-            //Èç¹ûÖ»Ê£Ò»¸öµã£¬¼ÓÈëÊı×é
+            //å¦‚æœåªå‰©ä¸€ä¸ªç‚¹ï¼ŒåŠ å…¥æ•°ç»„
             if (data.length == 1) {
                 cutdowndata.push(data[0]);
                 curNumber++;
                 return;
             }
-            //Èç¹ûÎª¿Õ£¬·µ»Ø
+            //å¦‚æœä¸ºç©ºï¼Œè¿”å›
             if (data.length == 0) {
                 return;
             }
-            var k = 0; //kÊÇÀëÏÒ×îÔ¶µÄµãÏÂ±ê
-            var max = 0; //maxÊÇ×îÔ¶µÄ¾àÀë
+            var k = 0; //kæ˜¯ç¦»å¼¦æœ€è¿œçš„ç‚¹ä¸‹æ ‡
+            var max = 0; //maxæ˜¯æœ€è¿œçš„è·ç¦»
             for (var i = 1; i < data.length - 1; i++) {
                 var d = PointLineDistance(data[0], data[data.length - 1], data[i]);
                 if (d > max) {
@@ -152,7 +154,7 @@
                 }
                 else {
                     ShowData(newdata);
-                    document.getElementById('result').innerText = "Î´Ñ¹Ëõ";
+                    document.getElementById('result').innerText = "æœªå‹ç¼©";
                 }
                 CutDown = false;
             }
@@ -186,7 +188,7 @@
             }
         }
         function toLambert(data) {
-            //ÓÃÓÚ´æ´¢À¼²®ÌØÍ¶Ó°Ö®ºóµÄÊı¾İ
+            //ç”¨äºå­˜å‚¨å…°ä¼¯ç‰¹æŠ•å½±ä¹‹åçš„æ•°æ®
             newdata = [];
             preNumber = 0;
             data = data.split('\r\n');
@@ -211,10 +213,10 @@
         function GetLambertPoint(L, B) {
             L = L * Math.PI / 180;
             B = B * Math.PI / 180;
-            var b1 = 20 * Math.PI / 180; //À¼²®ÌØÍ¶Ó°µÄ±ê×¼Î³Ïß1
-            var b2 = 40 * Math.PI / 180; //À¼²®ÌØÍ¶Ó°µÄ±ê×¼Î³Ïß2
-            var l0 = 105 * Math.PI / 180;  //Ô­µã¾­¶È
-            var b0 = 0;  //Ô­µãÎ³¶È
+            var b1 = 20 * Math.PI / 180; //å…°ä¼¯ç‰¹æŠ•å½±çš„æ ‡å‡†çº¬çº¿1
+            var b2 = 40 * Math.PI / 180; //å…°ä¼¯ç‰¹æŠ•å½±çš„æ ‡å‡†çº¬çº¿2
+            var l0 = 105 * Math.PI / 180;  //åŸç‚¹ç»åº¦
+            var b0 = 0;  //åŸç‚¹çº¬åº¦
             var m = Math.cos(B) / Math.sqrt(1 - e2 * Math.sin(B) * Math.sin(B));
             var mb1 = Math.cos(b1) / Math.sqrt(1 - e2 * Math.sin(b1) * Math.sin(b1));
             var mb2 = Math.cos(b2) / Math.sqrt(1 - e2 * Math.sin(b2) * Math.sin(b2));
@@ -226,7 +228,7 @@
             var n = Math.log(mb1 / mb2) / Math.log(tb1 / tb2);
             var F = mb1 / (n * Math.pow(tb1, n));
             var r = a * F * Math.pow(t, n);
-            //¼ÆËãr0£¬ĞèÒª¼ÆËãt0
+            //è®¡ç®—r0ï¼Œéœ€è¦è®¡ç®—t0
             var t0 = Math.tan(Math.PI / 4 - b0 / 2) / Math.pow((1 - e * Math.sin(b0)) / (1 + e * Math.sin(b0)), e / 2);
             var r0 = a * F * Math.pow(t0, n);
             var theta = n * (L - l0);
