@@ -1,7 +1,7 @@
 # gisalgorithm_examples
 GIS算法基础课程实例
 # 跳马问题
-[跳马]https://njnu23160202.github.io/gisalgorithm_examples/JumpingHorse.html
+https://njnu23160202.github.io/gisalgorithm_examples/JumpingHorse.html
 # 最佳工作序列
 https://njnu23160202.github.io/gisalgorithm_examples/BestOrder.html
 # 空间对象几何特征编码
