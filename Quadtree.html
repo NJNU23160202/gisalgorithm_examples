@@ -81,7 +81,7 @@
         {
             this.newc[i]=new juzhen();
         }
-    }                                                        //��ά����  ÿһά��һ������
+    }                                                        //三维数组  每一维是一个矩阵
     function lie(lie)
     {
        this.lie=[];
@@ -93,11 +93,11 @@
      for(;i<8;i++)
      {
         this.hang[i]=new lie();
-     }                                               //����һ������
+     }                                               //定义一个矩阵
      this.col=col;
      this.row=row;
     }
-    function read()                         //��ȡ����
+    function read()                         //读取数据
     {
       var file=document.getElementById("file").files[0];
       var reader=new FileReader();
@@ -106,15 +106,15 @@
       reader.onload=function(data)
       {
       JuZhen.col=this.result[0];
-      JuZhen.row=this.result[2];              //��ȡ��һ�е����к�
+      JuZhen.row=this.result[2];              //读取第一行的行列号
       while(this.result[i]!='\n')
       {
          i++;
-      }                                       //������һ��
-      i=i+1;                                  //����
+      }                                       //跳过第一行
+      i=i+1;                                  //换行
       var juzhenr=0;
       var juzhenl=0;
-      var temp="";//�����洢�ַ���
+      var temp="";//用来存储字符串
       while(this.result[i+2])
       {
       while(this.result[i+1]!='\n'&&this.result[i+1])
@@ -137,7 +137,7 @@
       four_decimal();
       }
     }
-    function Tobinary(k)                 //�õ�λ�õ��Ľ���M��
+    function Tobinary(k)                 //得到位置的四进制M码
     {
        var s=[];
        var rem=0;
@@ -148,7 +148,7 @@
         rem = k % 2;
         k = Math.floor(k / 2);
         s[i++] = rem;
-    } while (k != 0);   //��ʮ��������0ʱҲҪ����һ���ѭ�������Ա�����do����whileѭ����������whileѭ��
+    } while (k != 0);   //当十进制数是0时也要进行一遍此循环，所以必须用do……while循环，而不是while循环
     for (var j = --i; j >= 0; j--)
     {
         t += s[j] * Math.pow(10.0, j);
@@ -177,17 +177,17 @@
     for (var j = 0; j < 8; j++)
     {
         q = Juzhen2.hang[i].lie[j];
-        t[0] = Math.floor(q / 100);                                   //��һ��ı��
+        t[0] = Math.floor(q / 100);                                   //第一层的编号
         q = q % 100;    
-        t[1] = Math.floor(q / 10);                                    //�ڶ���ı��
+        t[1] = Math.floor(q / 10);                                    //第二层的编号
         q = q % 10;
-        t[2] = q;                                                     //������ı��
-        N.newc[num_ceng].hang[i].lie[j]=t[0].toString()+t[1].toString()+t[2].toString();   //��ײ㣬��λ����
-        N.newc[num_ceng+1].hang[i].lie[j]=t[0].toString()+t[1].toString();                //�м�㣬��λ����
-        N.newc[num_ceng+2].hang[i].lie[j]=t[0].toString();                               //��߲㣬һλ����
+        t[2] = q;                                                     //第三层的编号
+        N.newc[num_ceng].hang[i].lie[j]=t[0].toString()+t[1].toString()+t[2].toString();   //最底层，三位编码
+        N.newc[num_ceng+1].hang[i].lie[j]=t[0].toString()+t[1].toString();                //中间层，俩位编码
+        N.newc[num_ceng+2].hang[i].lie[j]=t[0].toString();                               //最高层，一位编码
         // N.newc[i].hang[j].lie[1]=2;
-        // N.newc[num_ceng].hang[i].lie[j]=N.newc[i].hang[j].lie.concat(t);            //���鸳ֵ���������Ʋ���ֱ������ֵ
-        // t.shift();                                   //ɾ����һ��Ԫ��
+        // N.newc[num_ceng].hang[i].lie[j]=N.newc[i].hang[j].lie.concat(t);            //数组赋值，数组名称不能直接做左值
+        // t.shift();                                   //删除第一个元素
         // N.newc[num_ceng+1].hang[i].lie[j]=N.newc[i].hang[j+1].lie.concat(t);
         // t.shift();
         // N.newc[num_ceng+2].hang[i].lie[j]=N.newc[i].hang[j+2].lie.concat(t);
@@ -214,7 +214,7 @@ function judge_four(a,b,c)            //a juzhen1  b N
         for (var m = c.hang[i].lie[0]; m <c.hang[i].lie[0] + 2; m++)
         for (var n = c.hang[i].lie[1]; n <c.hang[i].lie[1] + 1; n++)
             w += eq(a.hang[m].lie[n], a.hang[m].lie[n+1]);
-        if (w == 2)//4��ֵ����һ��
+        if (w == 2)//4个值属性一样
         {
             for (var m = c.hang[i].lie[0]; m <c.hang[i].lie[0]+ 2; m++)
             for (var n = c.hang[i].lie[1]; n <c.hang[i].lie[1] + 2; n++)
@@ -243,7 +243,7 @@ function judge_four(a,b,c)            //a juzhen1  b N
 function checkcombine_four(a,b)
 {
     var num_ceng=0;
-    //��һ��
+    //第一层
     c.hang[0].lie[0]=0;
     c.hang[0].lie[1]=0;
     c.hang[1].lie[0]=0;
@@ -291,7 +291,7 @@ function checkcombine_four(a,b)
         for (var m = c.hang[i].lie[0]; m < 4; m++)
         for (var n = c.hang[i].lie[1]; n < 3; n++)
             w += eq(a.hang[m].lie[n], a.hang[m].lie[n+1]);
-        if (w == 12)//16��ֵ����һ��
+        if (w == 12)//16个值属性一样
         {
             for (var m = c.hang[i].lie[0]; m < c.hang[i].lie[0] + 4; m++)
             for (var n = c.hang[i].lie[1]; n < c.hang[i].lie[1] + 4; n++)
@@ -318,7 +318,7 @@ function checkcombine_four(a,b)
             }  
         }
     }
-    //�ڶ���
+    //第二层
     // ceng d[4] = { { 0, 0 }, { 0, 2 }, { 2, 0 }, { 2, 2 } },
     //     e[4] = { { 0, 4 }, { 0, 6 }, { 2, 4 }, { 2, 6 } },
     //     f[4] = { { 4, 0 }, { 4, 2 }, { 6, 0 }, { 6, 2 } },
@@ -362,7 +362,7 @@ function output_a()
 
 <body>
     
-    <div id="biaotilan">Ҫ�󣺱�д��ȡ���������Ĳ����Ľ���M����򣬲������������ء�
+    <div id="biaotilan">要求：编写求取下述矩阵四叉树四进制M码程序，并将运算结果返回。
          </div>
      
          </br>
@@ -371,25 +371,22 @@ function output_a()
          <div style="width:11%;height:585px;float:left;"> </div>
      
          <div id="gongnenglan">
-             <div id="gongneng">
-                <span style="font-family:���� Std L;color:black;font-style:normal;"> <input type="file" id="file"/><p style="text-align:center;">ѡ��ʵ������</p></span>
-             </div>
              <div id="gongneng">             
-                <input type="button" onclick="read()" value="��ʾ" style="height:100%;width:100%">
+                <input type="button" onclick="read()" value="显示" style="height:100%;width:100%">
              </div>
             
            <div id="gongneng">             
-            <input type="button" onclick="output_c(N);" value="�Ĳ���M��" style="height:100%;width:100%">
+            <input type="button" onclick="output_c(N);" value="四叉树M码" style="height:100%;width:100%">
          </div>     
          </div>
      
      
          <div id="ditukuang">
-            <h3 style="text-align:center">ѹ��ǰ</h3>
+            <h3 style="text-align:center">压缩前</h3>
              <div id="myCanvas" width="420" height="360" style="float:left;margin:0px;margin-left:35px;"></div>
           </div>
           <div id="ditukuang">
-             <h3 style="text-align:center">ѹ����</h3>
+             <h3 style="text-align:center">压缩后</h3>
            <div id="myCanvas2" width="420" height="360" style="float:left;margin:0px;margin-left:35px;"></div>
         </div>
 <div>
