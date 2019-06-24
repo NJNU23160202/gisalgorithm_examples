@@ -1,0 +1,199 @@
+<html>
+<head>
+</head>
+
+<body>
+        <script>
+                var n,id,time,profit,deadline,Maxdeadline;
+                var Work = new Array();	//创建用于计算的数组
+                var Value = new Array();//创建用于比值的数组
+            
+                for(var i=0;i<200;i+=1)//创建二维虚拟数组
+                {	
+                    Value[i] = new Array();
+                    for(var j=0;j<200;j+=1)
+                        Value[i][j] = 0;
+                }
+                
+                function GetMaxDeadline()//getDDL
+                {
+                    var max = 0;
+                    for (var i = 0; i < n; i+=1)
+                    {
+                        if (Work[i].deadline > max)
+                            max = Work[i].deadline;
+                    }	
+                    return max;
+                }
+                
+                function max(a,b)//创建比较最大值的函数
+                {
+                    if (a >= b)
+                        return a;
+                    else return b;
+                }
+                
+                
+                function ArrangeWork()//创建排序工作的函数
+                {
+                
+                    Maxdeadline = GetMaxDeadline();//填表,其中第一行和第一列全为0  
+                    for (var i = 0; i <= n; i+=1)
+                        Value[i][0] = 0;
+                    for (var j = 0; j <= Maxdeadline; j+=1)
+                        Value[0][j] = 0;
+                    for (var i = 1; i <= n; i+=1)
+                    {
+                        for (var j = 1; j <= Maxdeadline; j+=1)
+                        {
+                            if (j >= Work[i - 1].time && Value[i - 1][j - Work[i - 1].time] + Work[i - 1].profit > Value[i - 1][j])
+                            {
+                                if (j <= Work[i - 1].deadline)
+                                    Value[i][j] = Value[i - 1][j - Work[i - 1].time] + Work[i - 1].profit;
+                                else
+                                    Value[i][j] = Value[i][j - 1];
+                            }
+                            else
+                            {
+                                Value[i][j] = Value[i - 1][j];
+                            }
+                        }
+                    }
+                    
+                    var result = new Array(n+1);//创建序列数组，计算工作序列
+                    var j = Maxdeadline;
+                    for (var i = n; i > 0; i-=1)
+                    {
+                        if (Value[i][j] > Value[i - 1][j])
+                        {
+                            result[i - 1] = 1;
+                            j = j - Work[i - 1].time;
+                        }
+                        else
+                        {	
+                            result[i-1] = 0;
+                        }
+                    }
+                    
+                    document.getElementById('result').style.display="block";
+                    
+                    str = "<br/><a>结果:";//输出最佳序列和总价值
+                    for (var i = 0; i < n; i+=1)
+                    {
+                        if (result[i])
+                        {
+                            str += Work[i].id + "  ";
+                        }
+                    }
+                    str += '</a><br/> <br/>';
+                    str += "<a>总价值:";
+                    str += Value[n][Maxdeadline].toString();
+                    str += "</a>"
+                    document.getElementById('result').innerHTML  = str;
+                }
+                
+                function GetValue()//输入并传递数值
+                {
+                
+                    if(document.getElementById('n').value!="")
+                        n = parseInt(document.getElementById('n').value);
+                    else
+                    {
+                        alert('Wrong！');
+                        return;
+                    }
+                    if(document.getElementById('id').value!="")
+                    {
+                        id0 = document.getElementById('id').value;
+                        id = id0.split(',')
+                    }
+                    else
+                    {
+                        alert('Wrong！');
+                        return;
+                    }
+                    
+                    if(document.getElementById('time').value!="")
+                    {
+                        time0 = document.getElementById('time').value;
+                        time = time0.split(',');
+                    }
+                    else
+                    {
+                        alert('Wrong！');
+                        return;
+                    }
+                    
+                    if(document.getElementById('deadline').value!="")
+                    {
+                        deadline0 = document.getElementById('deadline').value;
+                        deadline = deadline0.split(',');
+                    }
+                    else
+                    {
+                        alert('Wrong！');
+                        return;
+                    }
+                    
+                    if(document.getElementById('profit').value!="")
+                    {
+                        profit0 = document.getElementById('profit').value;
+                        profit = profit0.split(',');
+                    }
+                    else
+                    {
+                        alert('Wrong！');
+                        return;
+                    }
+                    
+                    for(var i=0;i<n;i+=1)
+                    {
+                        var temp = 	{'id':id[i],'time':parseInt(time[i]),'deadline':parseInt(deadline[i]),'profit':parseInt(profit[i])};
+                        Work[i] = temp;
+                    }
+                    
+                    Work.sort(function(a,b)//对Work进行排序
+                    {
+                        if (a.deadline < b.deadline)
+                            return -1;
+                        else if (a.deadline == b.deadline)
+                        {
+                            if (a.time < b.time)
+                                return -1;
+                            else return 1;
+                        }
+                        else
+                            return 1;
+                    })
+                    
+                }
+            </script>
+
+        <div align="center"> 
+        <h2>最佳工作序列</h2>
+        <br><br>
+		数量：
+        <input type="text" id="n">
+        <br><br>
+		编号:
+        <input type="text" id="id">
+        <br><br>
+		费时:
+        <input type="text" id="time">
+        <br><br>
+		截至日期:
+		<input type="text" id="deadline">
+        <br><br>
+		价值:
+        <input type="text" id="profit">
+        <br><br>
+
+<button type="button" onclick = "GetValue();ArrangeWork();" style="width:100px;height:40px;margin-top:15px; border:1px solid; background:#FFF; font-size:14px">开始</button>
+
+</div>
+<div align="center"> 
+<div id = "result" style="display:none;text-align:center;background-color:#F0F0F0;width:540px;height:100px;margin-top:30px;">
+</div>
+
+<body>
+</html>
